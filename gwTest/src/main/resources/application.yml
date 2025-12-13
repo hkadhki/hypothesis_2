@@ -1,0 +1,62 @@
+server:
+  port: 8080
+
+
+ratelimiter:
+  nodes:
+    - id: limiter-1
+      host: limiter-1
+      port: 6565
+    - id: limiter-2
+      host: limiter-2
+      port: 6565
+    - id: limiter-3
+      host: limiter-3
+      port: 6565
+    - id: limiter-4
+      host: limiter-4
+      port: 6565
+    - id: limiter-5
+      host: limiter-5
+      port: 6565
+
+
+spring:
+  application:
+    name: gateway
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+  cloud:
+    gateway:
+      routes:
+        - id: demo-route
+          uri: http://backend:9000
+          predicates:
+            - Path=/dht/test/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                rate-limiter: "#{@dhtRateLimiter}"
+        - id: demo-redis
+          uri: http://backend:9000
+          predicates:
+            - Path=/redis/test/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userKeyResolver}"
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 10
+                redis-rate-limiter.requestedTokens: 1
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

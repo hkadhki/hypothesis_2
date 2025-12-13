@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package ratelimiter;
+
+option java_package = "org.example.ratelimiter";
+option java_multiple_files = true;
+
+service RateLimiter {
+  rpc CheckLimit (RateLimitRequest) returns (RateLimitResponse);
+}
+
+message RateLimitRequest {
+  string key = 1;
+  string ruleId = 2;
+  int64 timestamp = 3;
+}
+
+message RateLimitResponse {
+  bool allowed = 1;
+  string reason = 2;
+  int64 retryAfterMillis = 3;
+}

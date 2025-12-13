@@ -1,0 +1,77 @@
+version: "3.9"
+
+services:
+  gateway:
+    image: gateway:latest
+    container_name: gateway
+    depends_on:
+      - redis
+      - backend
+      - limiter-1
+      - limiter-2
+      - limiter-3
+      - limiter-4
+      - limiter-5
+    ports:
+      - "8080:8080"
+    environment:
+      RATELIMITER_NODES: |
+        limiter-1:6565;
+        limiter-2:6565;
+        limiter-3:6565;
+        limiter-4:6565;
+        limiter-5:6565
+      SPRING_DATA_REDIS_URL: "redis://redis:6379"
+
+  backend:
+    image: test:latest
+    container_name: backend
+    ports:
+      - "9000:9000"
+
+  limiter-1:
+    image: limiter:latest
+    container_name: limiter-1
+    environment:
+      - GRPC_PORT=6565
+
+  limiter-2:
+    image: limiter:latest
+    container_name: limiter-2
+    environment:
+      - GRPC_PORT=6565
+
+  limiter-3:
+    image: limiter:latest
+    container_name: limiter-3
+    environment:
+      - GRPC_PORT=6565
+
+  limiter-4:
+    image: limiter:latest
+    container_name: limiter-4
+    environment:
+      - GRPC_PORT=6565
+
+  limiter-5:
+    image: limiter:latest
+    container_name: limiter-5
+    environment:
+      - GRPC_PORT=6565
+
+
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    container_name: envoy
+    ports:
+      - "10000:10000"
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
