@@ -17,12 +17,14 @@ public class TestApplication {
     }
 
     @GetMapping("/dht/test")
-    public Map<String, Object> demo(@RequestHeader(value = "X-User-Id", required = false) String userId) {
-        return Map.of(
-                "message", "Backend response OK",
-                "userId", userId,
-                "timestamp", System.currentTimeMillis()
-        );
+    public Map<String, Object> demo(
+            @RequestHeader(value = "X-User-Id", required = false) String userId
+    ) {
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("message", "Backend response OK");
+        response.put("userId", userId);
+        response.put("timestamp", System.currentTimeMillis());
+        return response;
     }
 
 

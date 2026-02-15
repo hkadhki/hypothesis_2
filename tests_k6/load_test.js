@@ -1,25 +1,75 @@
 import http from 'k6/http';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import { Counter, Trend } from 'k6/metrics';
 
 export const options = {
-    vus: 200,
-    duration: '30s',
+    scenarios: {
+        redis: {
+            executor: 'constant-vus',
+            vus: 200,
+            duration: '30s',
+            exec: 'testRedis',
+        },
+        envoy: {
+            executor: 'constant-vus',
+            vus: 200,
+            duration: '30s',
+            startTime: '35s',
+            exec: 'testEnvoy',
+        },
+        dht: {
+            executor: 'constant-vus',
+            vus: 200,
+            duration: '30s',
+            startTime: '70s',
+            exec: 'testDHT',
+        },
+    },
 };
 
 
-const allowed = new Counter('allowed');              // успешно прошли (2xx)
-const limited = new Counter('limited');              // отрезаны лимитером (429)
-const errors  = new Counter('errors');               // реальные ошибки (5xx, timeout)
-const allowedLatency = new Trend('allowed_latency'); // latency только для 2xx
+const redisAllowed = new Counter('redis_allowed');
+const redisLimited = new Counter('redis_limited');
+const redisErrors  = new Counter('redis_errors');
+const redisLatency = new Trend('redis_latency');
 
 
-const TARGET = __ENV.TARGET || 'http://localhost:8080/dht/test';
+const envoyAllowed = new Counter('envoy_allowed');
+const envoyLimited = new Counter('envoy_limited');
+const envoyErrors  = new Counter('envoy_errors');
+const envoyLatency = new Trend('envoy_latency');
 
-export default function () {
+
+const dhtAllowed = new Counter('dht_allowed');
+const dhtLimited = new Counter('dht_limited');
+const dhtErrors  = new Counter('dht_errors');
+const dhtLatency = new Trend('dht_latency');
+
+
+const REDIS_URL = 'http://localhost:8080/redis/test';
+const ENVOY_URL = 'http://localhost:10000/dht/test';
+const DHT_URL   = 'http://localhost:8080/dht/test';
+
+
+export function testRedis() {
+    runTest(REDIS_URL, redisAllowed, redisLimited, redisErrors, redisLatency);
+}
+
+
+export function testEnvoy() {
+    runTest(ENVOY_URL, envoyAllowed, envoyLimited, envoyErrors, envoyLatency);
+}
+
+
+export function testDHT() {
+    runTest(DHT_URL, dhtAllowed, dhtLimited, dhtErrors, dhtLatency);
+}
+
+
+function runTest(url, allowed, limited, errors, latencyTrend) {
     const userId = 'user-' + Math.floor(Math.random() * 10000);
 
-    const res = http.get(TARGET, {
+    const res = http.get(url, {
         headers: { 'X-User-Id': userId },
     });
 
@@ -30,7 +80,7 @@ export default function () {
 
     if (res.status >= 200 && res.status < 300) {
         allowed.add(1);
-        allowedLatency.add(res.timings.duration);
+        latencyTrend.add(res.timings.duration);
     } else if (res.status === 429) {
         limited.add(1);
     } else {

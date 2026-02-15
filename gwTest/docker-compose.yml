@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   gateway:
+    build: ../gwTest
     image: gateway:latest
     container_name: gateway
     depends_on:
@@ -24,12 +25,14 @@ services:
       SPRING_DATA_REDIS_URL: "redis://redis:6379"
 
   backend:
+    build: ../test
     image: test:latest
     container_name: backend
     ports:
       - "9000:9000"
 
   limiter-1:
+    build: ../limiter
     image: limiter:latest
     container_name: limiter-1
     environment:

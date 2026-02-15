@@ -11,6 +11,7 @@ static_resources:
               typed_config:
                 "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
                 stat_prefix: ingress_http
+
                 route_config:
                   name: local_route
                   virtual_hosts:
@@ -21,29 +22,24 @@ static_resources:
                             prefix: "/"
                           route:
                             cluster: backend_cluster
+
                 http_filters:
                   - name: envoy.filters.http.local_ratelimit
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
                       stat_prefix: http_local_rate_limit
                       token_bucket:
-                        max_tokens: 10          # burst
-                        tokens_per_fill: 10    # сколько токенов добавляем
-                        fill_interval: 1s
+                        max_tokens: 60
+                        tokens_per_fill: 60
+                        fill_interval: 3600s
                       filter_enabled:
-                        runtime_key: local_rate_limit_enabled
                         default_value:
                           numerator: 100
                           denominator: HUNDRED
                       filter_enforced:
-                        runtime_key: local_rate_limit_enforced
                         default_value:
                           numerator: 100
                           denominator: HUNDRED
-                      response_headers_to_add:
-                        - header:
-                            key: X-RateLimit-Envoy
-                            value: "local_limited"
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
